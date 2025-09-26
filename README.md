@@ -1,14 +1,17 @@
 # E-Commerce Sales Rank Analysis
 
-Analysis and prediction system for Amazon product sales rankings using machine learning.
+A comprehensive machine learning system for analyzing and predicting Amazon product sales rankings, featuring data visualization, REST API, and containerized deployment.
 
 ## 📊 Project Overview
 
-This project analyzes real Amazon product data (books and games) to:
-- Validate and clean e-commerce data
-- Visualize sales rank distributions by category
-- Predict sales rankings using XGBoost and Random Forest models
-- Identify top-performing product categories
+This project provides end-to-end analysis of Amazon product data (810 items across books and games categories) to predict sales performance using advanced machine learning techniques. The system includes data cleaning pipelines, visualization tools, trained ML models, and a production-ready API for real-time predictions.
+
+### Key Capabilities
+- **Data Processing**: Automated validation and cleaning of e-commerce JSON data
+- **Machine Learning**: Random Forest and XGBoost models with 80.4% R² accuracy
+- **Visualization**: Comprehensive charts and histograms for data insights
+- **API Service**: FastAPI endpoint for real-time sales rank predictions
+- **Containerization**: Docker support for easy deployment and scaling
 
 ## 🚀 Quick Start with Docker
 
@@ -65,55 +68,77 @@ uv pip install -r requirements.txt
 ## 📁 Project Structure
 
 ```
-.
-├── products.json                 # Main product data (810 items)
-├── categories.json              # Category hierarchy
-├── requirements.txt             # Python dependencies
-├── Dockerfile                   # Docker configuration
-├── docker-compose.yml          # Multi-service setup
+wmaps/
 │
-├── Core Scripts/
-│   ├── analyze_json.py         # Data validation & category analysis
-│   ├── fixed_model.py          # Main ML model (Random Forest/XGBoost)
-│   ├── filter_products.py      # Data cleaning utility
-│   ├── verify_filtering.py     # Data verification
-│   └── plot_salesrank_histograms.py  # Visualization generator
+├── 📊 DATA FILES
+│   ├── products.json              # Main dataset: 810 Amazon products
+│   ├── categories.json            # Category hierarchy mapping
+│   ├── rf_model.pkl              # Trained Random Forest model
+│   ├── xgb_model.pkl             # Trained XGBoost model
+│   └── encoders.pkl              # Label encoders and feature metadata
 │
-├── visualizations/             # Generated plots
-├── book_histograms/           # Category-specific histograms
-├── archive/                   # Unused/experimental scripts
-└── backups/                   # Data backups
+├── 🔧 CORE ANALYSIS SCRIPTS
+│   ├── analyze_json.py           # Validates JSON data and generates category distribution plots
+│   ├── fixed_model.py            # Main ML training script with regularization
+│   ├── filter_products.py        # Removes invalid data (0 or missing sales ranks)
+│   ├── verify_filtering.py       # Verifies data integrity post-cleaning
+│   └── model_diagnostics.py      # Evaluates model performance and generates metrics
+│
+├── 📈 VISUALIZATION SCRIPTS
+│   ├── plot_book_salesrank.py    # Creates sales rank plots by book category
+│   ├── plot_salesrank_histograms.py # Generates detailed histogram visualizations
+│   └── predict_salesrank.py      # Runs predictions and creates comparison charts
+│
+├── 🌐 API & SERVICES
+│   ├── book_api.py               # FastAPI service for real-time predictions
+│   ├── test_api.py               # API endpoint testing suite
+│   └── test_docker.py            # Docker container health checks
+│
+├── 🐳 DEPLOYMENT
+│   ├── Dockerfile                # Container configuration
+│   ├── docker-compose.yml        # Multi-service orchestration
+│   ├── .dockerignore            # Docker build exclusions
+│   └── requirements.txt          # Python dependencies
+│
+├── 📊 OUTPUT DIRECTORIES
+│   ├── visualizations/           # All generated charts and plots
+│   │   └── book_histograms/     # Category-specific histogram images
+│   ├── backups/                 # Automatic data backups
+│   └── archive/                 # Legacy/experimental scripts
+│
+└── 📝 DOCUMENTATION
+    ├── README.md                 # This file
+    ├── api_test_results.md      # API testing documentation
+    ├── run_api.md               # API usage guide
+    └── book_vs_games.md         # Category comparison analysis
 ```
 
-## 🔧 Key Scripts
+## 🔧 File Descriptions
 
-### 1. **fixed_model.py** - Main Analysis
-Trains and evaluates machine learning models with proper regularization.
-```bash
-python fixed_model.py
-```
-**Output**: Model performance metrics, predictions by category
+### Core ML Pipeline
+- **`fixed_model.py`**: Main training script that builds Random Forest and XGBoost models with L1/L2 regularization, cross-validation, and performance evaluation
+- **`model_diagnostics.py`**: Comprehensive model analysis including residual plots, feature importance, and prediction vs actual comparisons
+- **`predict_salesrank.py`**: Generates predictions for all categories and creates comparative visualizations
 
-### 2. **analyze_json.py** - Data Validation
-Validates JSON structure and creates category distribution plots.
-```bash
-python analyze_json.py
-```
-**Output**: `category_analysis.png`
+### Data Processing
+- **`analyze_json.py`**: Validates JSON integrity, checks for missing fields, and generates category distribution charts
+- **`filter_products.py`**: Cleans dataset by removing entries with invalid/zero sales ranks, creates automatic backups
+- **`verify_filtering.py`**: Post-processing verification to ensure data quality and consistency
+- **`check_data_source.py`**: Analyzes data provenance and structure
+- **`download_json.py`**: Utility for fetching product data from remote sources
 
-### 3. **plot_salesrank_histograms.py** - Histogram Generator
-Creates detailed histograms for each book category.
-```bash
-python plot_salesrank_histograms.py
-```
-**Output**: Individual histograms in `book_histograms/`
+### Visualization Suite
+- **`plot_book_salesrank.py`**: Creates detailed sales rank analysis for book categories with statistical overlays
+- **`plot_salesrank_histograms.py`**: Generates comprehensive histogram visualizations with distribution statistics
 
-### 4. **filter_products.py** - Data Cleaning
-Removes products with invalid sales ranks (0 or missing).
-```bash
-python filter_products.py
-```
-**Output**: Cleaned `products.json`, backup created
+### API Service
+- **`book_api.py`**: FastAPI application providing REST endpoints for sales rank predictions
+  - `GET /` - API documentation
+  - `GET /health` - Service health check
+  - `GET /categories` - List available categories with statistics
+  - `POST /predict` - Get sales rank predictions for a book
+- **`test_api.py`**: Automated testing suite for API endpoints
+- **`test_docker.py`**: Container health and integration tests
 
 ## 📈 Model Performance
 
@@ -136,22 +161,66 @@ python filter_products.py
 - **Categories**: Books (5 subcategories) and Games (5 platforms)
 - **Features**: Price, category, title length, brand, images, etc.
 
-## 🛠️ Development
+## 🚀 Running the API
 
-### Adding New Analysis
-
-1. Create your script in the project root
-2. Update `requirements.txt` if needed
-3. Rebuild Docker image: `docker-compose build`
-
-### Running Tests
-
+### Local Development
 ```bash
-# Verify data integrity
+# Start the API server
+python book_api.py
+
+# API will be available at:
+# http://localhost:8001
+# Documentation: http://localhost:8001/docs
+```
+
+### Example API Request
+```bash
+curl -X POST "http://localhost:8001/predict" \
+  -H "Content-Type: application/json" \
+  -d '{"category": "programming", "price": 39.99}'
+```
+
+### Docker Deployment
+```bash
+docker-compose up book-api
+```
+
+## 🛠️ Development Workflow
+
+### 1. Data Pipeline
+```bash
+# Step 1: Validate raw data
+python analyze_json.py
+
+# Step 2: Clean data
+python filter_products.py
+
+# Step 3: Verify cleaning
 python verify_filtering.py
 
-# Check model performance
+# Step 4: Train models
+python fixed_model.py
+
+# Step 5: Generate visualizations
+python plot_salesrank_histograms.py
+```
+
+### 2. Model Testing
+```bash
+# Run diagnostics
 python model_diagnostics.py
+
+# Test predictions
+python predict_salesrank.py
+```
+
+### 3. API Testing
+```bash
+# Start API
+python book_api.py
+
+# Run tests
+python test_api.py
 ```
 
 ## 📝 Notes
