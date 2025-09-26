@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+
+# Backups and archives
+backups/
+archive/
+*.backup
+*_backup*
+
+# Visualizations (will be regenerated)
+visualizations/
+book_histograms/
+*.png
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+*.md
+README*

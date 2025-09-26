@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Main analysis service
+  sales-analyzer:
+    build: .
+    container_name: ecommerce-sales-analyzer
+    volumes:
+      # Mount visualizations directory to persist output
+      - ./visualizations:/app/visualizations
+      - ./book_histograms:/app/book_histograms
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python fixed_model.py
+
+  # Data validation service
+  data-validator:
+    build: .
+    container_name: ecommerce-data-validator
+    volumes:
+      - ./visualizations:/app/visualizations
+    command: python analyze_json.py
+
+  # Histogram generator service
+  histogram-generator:
+    build: .
+    container_name: ecommerce-histogram-gen
+    volumes:
+      - ./book_histograms:/app/book_histograms
+    command: python plot_salesrank_histograms.py
+
+  # Interactive analysis environment
+  jupyter:
+    image: jupyter/scipy-notebook:latest
+    container_name: ecommerce-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/home/jovyan/work
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
+
+# Volumes for persistent data
+volumes:
+  visualizations:
+  book_histograms:
