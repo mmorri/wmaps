@@ -2,9 +2,11 @@
 
 ## Prerequisites
 
-Ensure you have Python 3.7+ installed with the following packages:
+Ensure you have Python 3.11+ installed with the following packages:
 ```bash
-pip install fastapi uvicorn pandas numpy scikit-learn xgboost
+pip install -r requirements.txt
+# or using uv
+uv pip install -r requirements.txt
 ```
 
 ## Files Required
@@ -12,7 +14,7 @@ pip install fastapi uvicorn pandas numpy scikit-learn xgboost
 1. **products.json** - Product data in NDJSON format
 2. **categories.json** - Category hierarchy data
 3. **book_api.py** - FastAPI application
-4. **train_and_save_models.py** - Model training script
+4. **train_and_export.py** - Model training/export script
 
 ## Setup Instructions
 
@@ -21,7 +23,7 @@ pip install fastapi uvicorn pandas numpy scikit-learn xgboost
 First, train and save the machine learning models:
 
 ```bash
-python train_and_save_models.py
+python train_and_export.py
 ```
 
 This will create three pickle files:
@@ -230,7 +232,7 @@ curl http://localhost:8001/categories
 ### Module Not Found Errors
 Install missing dependencies:
 ```bash
-pip install fastapi uvicorn pandas numpy scikit-learn xgboost pickle
+pip install -r requirements.txt
 ```
 
 ## Stopping the Server

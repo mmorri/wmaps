@@ -1,10 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi import status
+from pydantic import BaseModel, Field
 import pickle
 import pandas as pd
 import numpy as np
 import uvicorn
+import os
 from typing import Optional, Dict, Any
 
 # Create FastAPI app
@@ -23,31 +25,49 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load models and encoders
-print("Loading models...")
-with open('rf_model.pkl', 'rb') as f:
-    rf_model = pickle.load(f)
+# Globals set during startup
+rf_model = None
+xgb_model = None
+le_product = None
+le_subcategory = None
+feature_columns = []
+avg_salesrank_by_category = {}
+feature_medians = {}
+price_median: float | None = None
 
-with open('xgb_model.pkl', 'rb') as f:
-    xgb_model = pickle.load(f)
 
-with open('encoders.pkl', 'rb') as f:
-    encoders = pickle.load(f)
-    le_product = encoders['le_product']
-    le_subcategory = encoders['le_subcategory']
-    feature_columns = encoders['feature_columns']
-    avg_salesrank_by_category = encoders['avg_salesrank_by_category']
-    feature_medians = encoders['feature_medians']
-    price_median = encoders['price_median']
+@app.on_event("startup")
+def load_models() -> None:
+    global rf_model, xgb_model, le_product, le_subcategory
+    global feature_columns, avg_salesrank_by_category, feature_medians, price_median
 
-print("Models loaded successfully!")
+    try:
+        print("Loading models...")
+        with open('rf_model.pkl', 'rb') as f:
+            rf_model = pickle.load(f)
+        with open('xgb_model.pkl', 'rb') as f:
+            xgb_model = pickle.load(f)
+        with open('encoders.pkl', 'rb') as f:
+            encoders = pickle.load(f)
+            le_product = encoders['le_product']
+            le_subcategory = encoders['le_subcategory']
+            feature_columns = encoders['feature_columns']
+            avg_salesrank_by_category = encoders['avg_salesrank_by_category']
+            feature_medians = encoders['feature_medians']
+            price_median = encoders['price_median']
+        print("Models loaded successfully!")
+    except FileNotFoundError as e:
+        # Defer failure to endpoints; keep app running with health reporting
+        print(f"Warning: model file missing: {e}")
+    except Exception as e:
+        print(f"Warning: failed to load models: {e}")
 
 # Request model
 class BookPredictionRequest(BaseModel):
-    category: str
-    price: Optional[float] = None
-    title_length: Optional[int] = None
-    has_brand: Optional[bool] = None
+    category: str = Field(..., description="Book subcategory: business, cooking, history, programming, scifi")
+    price: Optional[float] = Field(None, ge=0, description="Price in USD")
+    title_length: Optional[int] = Field(None, ge=0, description="Title length in characters")
+    has_brand: Optional[bool] = Field(None, description="Whether the item has a brand/publisher")
 
 # Response model
 class BookPredictionResponse(BaseModel):
@@ -71,12 +91,18 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "models_loaded": True}
+    return {"status": "healthy", "models_loaded": all([
+        rf_model is not None,
+        xgb_model is not None,
+        le_subcategory is not None,
+    ])}
 
 @app.get("/categories")
 async def get_categories():
     # Filter only book categories
     book_categories = ['business', 'cooking', 'history', 'programming', 'scifi']
+    if le_subcategory is None:
+        return {"available_categories": [], "category_statistics": {}}
     available = [cat for cat in book_categories if cat in le_subcategory.classes_]
 
     categories_with_stats = {}
@@ -95,6 +121,10 @@ async def get_categories():
 
 @app.post("/predict", response_model=BookPredictionResponse)
 async def predict_sales_rank(request: BookPredictionRequest):
+    # Ensure models are loaded
+    if rf_model is None or xgb_model is None or le_subcategory is None or le_product is None:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail="Models not loaded. Train/export models and restart the API.")
     # Validate category
     if request.category not in le_subcategory.classes_:
         raise HTTPException(
@@ -169,6 +199,7 @@ async def predict_sales_rank(request: BookPredictionRequest):
     )
 
 if __name__ == "__main__":
-    print("Starting server on http://localhost:8001")
-    print("API documentation available at http://localhost:8001/docs")
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    port = int(os.environ.get("API_PORT", "8001"))
+    print(f"Starting server on http://localhost:{port}")
+    print(f"API documentation available at http://localhost:{port}/docs")
+    uvicorn.run(app, host="0.0.0.0", port=port)

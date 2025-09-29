@@ -1,0 +1,13 @@
+[project]
+name = "wmaps"
+version = "0.1.0"
+description = "E-Commerce Sales Rank Analysis and API"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+authors = [{name = "mmorri"}]
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100

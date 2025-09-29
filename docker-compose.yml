@@ -8,7 +8,7 @@ services:
     volumes:
       # Mount visualizations directory to persist output
       - ./visualizations:/app/visualizations
-      - ./book_histograms:/app/book_histograms
+      - ./visualizations/book_histograms:/app/visualizations/book_histograms
     environment:
       - PYTHONUNBUFFERED=1
     command: python fixed_model.py
@@ -26,7 +26,7 @@ services:
     build: .
     container_name: ecommerce-histogram-gen
     volumes:
-      - ./book_histograms:/app/book_histograms
+      - ./visualizations/book_histograms:/app/visualizations/book_histograms
     command: python plot_salesrank_histograms.py
 
   # Interactive analysis environment
@@ -40,6 +40,22 @@ services:
     environment:
       - JUPYTER_ENABLE_LAB=yes
     command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
+
+  # FastAPI service for predictions
+  book-api:
+    build: .
+    container_name: ecommerce-book-api
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - API_PORT=8001
+    command: python book_api.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 # Volumes for persistent data
 volumes:

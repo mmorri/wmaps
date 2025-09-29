@@ -48,21 +48,22 @@ docker run -v $(pwd)/visualizations:/app/visualizations ecommerce-analyzer pytho
 ## 🐍 Local Installation
 
 ### Requirements
-- Python 3.9+
-- pip or uv package manager
+- Python 3.11
+- uv or pip package manager
 
 ### Setup
 
 ```bash
-# Create virtual environment
-python -m venv .venv
+# Using uv (recommended)
+uv python install 3.11
+uv venv --python 3.11 .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Or using uv (faster)
 uv pip install -r requirements.txt
+
+# Or using Python venv + pip
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ## 📁 Project Structure
@@ -92,6 +93,7 @@ wmaps/
 ├── 🌐 API & SERVICES
 │   ├── book_api.py               # FastAPI service for real-time predictions
 │   ├── test_api.py               # API endpoint testing suite
+│   ├── train_and_export.py       # Train and export model artifacts for API
 │   └── test_docker.py            # Docker container health checks
 │
 ├── 🐳 DEPLOYMENT
@@ -139,6 +141,7 @@ wmaps/
   - `POST /predict` - Get sales rank predictions for a book
 - **`test_api.py`**: Automated testing suite for API endpoints
 - **`test_docker.py`**: Container health and integration tests
+ - **`cli.py`**: Utility CLI to run common tasks (`validate`, `filter`, `verify`, `train`, `api`)
 
 ## 📈 Model Performance
 
@@ -165,8 +168,11 @@ wmaps/
 
 ### Local Development
 ```bash
-# Start the API server
-python book_api.py
+# 1) Train/export model artifacts (first time or after data changes)
+python train_and_export.py
+
+# 2) Start the API server (default port 8001)
+python book_api.py  # or: API_PORT=8002 python book_api.py
 
 # API will be available at:
 # http://localhost:8001
@@ -182,7 +188,7 @@ curl -X POST "http://localhost:8001/predict" \
 
 ### Docker Deployment
 ```bash
-docker-compose up book-api
+docker-compose up --build book-api
 ```
 
 ## 🛠️ Development Workflow
@@ -221,6 +227,16 @@ python book_api.py
 
 # Run tests
 python test_api.py
+```
+
+### Helper CLI
+```bash
+# Use the helper CLI for common tasks
+python cli.py validate           # validate and analyze JSON files
+python cli.py filter             # filter products with invalid sales ranks
+python cli.py verify             # verify filtering results
+python cli.py train              # train models and export artifacts
+python cli.py api --port 8001    # run the FastAPI server
 ```
 
 ## 📝 Notes

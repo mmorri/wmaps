@@ -50,7 +50,7 @@ def organize_book_data(products):
     return category_data
 
 
-def plot_individual_histogram(category, sales_ranks, output_dir='histograms'):
+def plot_individual_histogram(category, sales_ranks, output_dir='visualizations/book_histograms'):
     """Create and save histogram for a single category."""
 
     # Create output directory if it doesn't exist
@@ -150,7 +150,7 @@ def plot_individual_histogram(category, sales_ranks, output_dir='histograms'):
     }
 
 
-def plot_combined_histogram(category_data, output_dir='histograms'):
+def plot_combined_histogram(category_data, output_dir='visualizations/book_histograms'):
     """Create combined histogram showing all categories together."""
 
     # Create output directory if it doesn't exist
@@ -252,7 +252,7 @@ def plot_combined_histogram(category_data, output_dir='histograms'):
     return filename
 
 
-def create_summary_table(stats_list, output_dir='histograms'):
+def create_summary_table(stats_list, output_dir='visualizations/book_histograms'):
     """Create a summary table visualization."""
 
     # Create output directory if it doesn't exist
@@ -335,7 +335,7 @@ def main():
     print(f"✅ Found {len(category_data)} book categories with sales rank data")
 
     # Create output directory
-    output_dir = 'book_histograms'
+    output_dir = 'visualizations/book_histograms'
     os.makedirs(output_dir, exist_ok=True)
 
     # Plot individual histograms
