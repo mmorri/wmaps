@@ -28,5 +28,9 @@ RUN mkdir -p visualizations book_histograms backups
 # Set Python to run in unbuffered mode
 ENV PYTHONUNBUFFERED=1
 
+# Run as a non-root user
+RUN useradd -m -u 10001 appuser && chown -R appuser:appuser /app
+USER appuser
+
 # Default command - run the main analysis
 CMD ["python", "fixed_model.py"]

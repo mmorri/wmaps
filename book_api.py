@@ -16,12 +16,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Add CORS middleware
+# Add CORS middleware. Origins come from ALLOWED_ORIGINS (comma-separated);
+# credentials are only allowed for explicitly listed origins — never with "*".
+_allowed_origins = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=_allowed_origins,
+    allow_credentials=bool(_allowed_origins),
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -36,6 +38,32 @@ feature_medians = {}
 price_median: float | None = None
 
 
+# Pinned SHA-256 hashes for the committed model artifacts. Generate them in CI
+# right after training (e.g. `sha256sum *.pkl`) and export them here so a
+# tampered artifact fails closed instead of being unpickled. Pickle can execute
+# arbitrary code, so never load artifacts from untrusted sources.
+_MODEL_HASH_ENV = {
+    'rf_model.pkl': 'RF_MODEL_SHA256',
+    'xgb_model.pkl': 'XGB_MODEL_SHA256',
+    'encoders.pkl': 'ENCODERS_SHA256',
+}
+
+
+def _verified_pickle_load(filename: str):
+    import hashlib
+    import io
+
+    with open(filename, 'rb') as f:
+        data = f.read()
+    env_name = _MODEL_HASH_ENV.get(filename, '')
+    expected = os.environ.get(env_name, '') if env_name else ''
+    if expected:
+        actual = hashlib.sha256(data).hexdigest()
+        if actual != expected.lower():
+            raise ValueError(f'{filename}: SHA-256 mismatch — artifact may be tampered with')
+    return pickle.load(io.BytesIO(data))
+
+
 @app.on_event("startup")
 def load_models() -> None:
     global rf_model, xgb_model, le_product, le_subcategory
@@ -43,18 +71,15 @@ def load_models() -> None:
 
     try:
         print("Loading models...")
-        with open('rf_model.pkl', 'rb') as f:
-            rf_model = pickle.load(f)
-        with open('xgb_model.pkl', 'rb') as f:
-            xgb_model = pickle.load(f)
-        with open('encoders.pkl', 'rb') as f:
-            encoders = pickle.load(f)
-            le_product = encoders['le_product']
-            le_subcategory = encoders['le_subcategory']
-            feature_columns = encoders['feature_columns']
-            avg_salesrank_by_category = encoders['avg_salesrank_by_category']
-            feature_medians = encoders['feature_medians']
-            price_median = encoders['price_median']
+        rf_model = _verified_pickle_load('rf_model.pkl')
+        xgb_model = _verified_pickle_load('xgb_model.pkl')
+        encoders = _verified_pickle_load('encoders.pkl')
+        le_product = encoders['le_product']
+        le_subcategory = encoders['le_subcategory']
+        feature_columns = encoders['feature_columns']
+        avg_salesrank_by_category = encoders['avg_salesrank_by_category']
+        feature_medians = encoders['feature_medians']
+        price_median = encoders['price_median']
         print("Models loaded successfully!")
     except FileNotFoundError as e:
         # Defer failure to endpoints; keep app running with health reporting
