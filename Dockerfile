@@ -1,5 +1,5 @@
-# Use Python 3.9 slim image for smaller size
-FROM python:3.9-slim
+# Use Python 3.12 slim image (requirements need >=3.10; 3.9 is EOL upstream)
+FROM python:3.12-slim
 
 # Set working directory
 WORKDIR /app
